@@ -399,10 +399,23 @@ function onCycle() {
     onError("Drilling is not supported by CNC Plasma.");
 }
 
-var pendingRadiusCompensation = -1;
+// var pendingRadiusCompensation = -1;
 
 function onRadiusCompensation() {
-    pendingRadiusCompensation = radiusCompensation;
+    // if (pendingRadiusCompensation >= 0) {
+    //     pendingRadiusCompensation = -1;
+    switch (radiusCompensation) {
+        case RADIUS_COMPENSATION_LEFT:
+            writeBlock(gFormat.format(41.1), "D#<_hal[plasmac_run.kerf-width-f]>");
+            break;
+        case RADIUS_COMPENSATION_RIGHT:
+            writeBlock(gFormat.format(42.1), "D#<_hal[plasmac_run.kerf-width-f]>");
+            break;
+        default:
+            writeBlock(gFormat.format(40));
+    }
+    // }
+    // pendingRadiusCompensation = radiusCompensation;
 }
 
 function onParameter(name, value) {
@@ -424,10 +437,10 @@ function onRapid(_x, _y, _z) {
     var x = xOutput.format(_x);
     var y = yOutput.format(_y);
     if (x || y) {
-        if (pendingRadiusCompensation >= 0) {
-            error(localize("Radius compensation mode cannot be changed at rapid traversal."));
-            return;
-        }
+        // if (pendingRadiusCompensation >= 0) {
+        //     error(localize("Radius compensation mode cannot be changed at rapid traversal."));
+        //     return;
+        // }
         writeBlock(gMotionModal.format(0), x, y);
         forceFeed();
     }
@@ -437,25 +450,26 @@ function onLinear(_x, _y, _z, feed) {
     var x = xOutput.format(_x);
     var y = yOutput.format(_y);
     if (x || y) {
-        if (pendingRadiusCompensation >= 0) {
-            pendingRadiusCompensation = -1;
-            switch (radiusCompensation) {
-                case RADIUS_COMPENSATION_LEFT:
-                    writeBlock(gFormat.format(41.1), "D#<_hal[plasmac_run.kerf-width-f]>");
-                    writeBlock(gMotionModal.format(1), x, y);
-                    break;
-                case RADIUS_COMPENSATION_RIGHT:
-                    writeBlock(gFormat.format(42.1), "D#<_hal[plasmac_run.kerf-width-f]>");
-                    writeBlock(gMotionModal.format(1), x, y);
-                    break;
-                default:
-                    writeBlock(gFormat.format(40));
-                    writeBlock(gMotionModal.format(1), x, y);
-            }
-        } else {
+        writeBlock(gMotionModal.format(1), x, y);
+        // if (pendingRadiusCompensation >= 0) {
+        //     pendingRadiusCompensation = -1;
+        //     switch (radiusCompensation) {
+        //         case RADIUS_COMPENSATION_LEFT:
+        //             writeBlock(gFormat.format(41.1), "D#<_hal[plasmac_run.kerf-width-f]>");
+        //             writeBlock(gMotionModal.format(1), x, y);
+        //             break;
+        //         case RADIUS_COMPENSATION_RIGHT:
+        //             writeBlock(gFormat.format(42.1), "D#<_hal[plasmac_run.kerf-width-f]>");
+        //             writeBlock(gMotionModal.format(1), x, y);
+        //             break;
+        //         default:
+        //             writeBlock(gFormat.format(40));
+        //             writeBlock(gMotionModal.format(1), x, y);
+        //     }
+        // } else {
 
-            writeBlock(gMotionModal.format(1), x, y);
-        }
+        //     writeBlock(gMotionModal.format(1), x, y);
+        // }
     }
 }
 
@@ -523,10 +537,10 @@ function writeCircle(circleData, feed) {
     circleIsBuffered = false;
     setCurrentPosition(circleStart);
 
-    if (pendingRadiusCompensation >= 0) {
-        error(localize("Radius compensation cannot be activated/deactivated for a circular move."));
-        return;
-    }
+    // if (pendingRadiusCompensation >= 0) {
+    //     error(localize("Radius compensation cannot be activated/deactivated for a circular move."));
+    //     return;
+    // }
 
     var start = getCurrentPosition();
     var slowedCutting = false;
