@@ -47,7 +47,7 @@ properties = {
     camTolerance: spatial(0.254, MM),
     showNotes: true,
     slowSpeedPercentage: 60,
-    MergeCircles: true,
+    MergeCircles: false,
     useAutomaticMaterialSelection: false,
 };
 
