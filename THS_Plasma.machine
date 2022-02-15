@@ -50,7 +50,7 @@
   </simulation>
 
   <post>
-    <postProcessor>user://Plasmac-rjf.cps</postProcessor>
+    <postProcessor>file://G:/My Drive/Projects/hsm-post-processors/Plasmac-rjf.cps</postProcessor>
     <postProperties>
       <Parameters/>
     </postProperties>
