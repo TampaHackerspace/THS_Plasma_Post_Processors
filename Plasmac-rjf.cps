@@ -219,10 +219,10 @@ function onOpen() {
     writeBlock(gAbsIncModal.format(90), gCutCompModal.format(40));
     writeBlock(gPlaneModal.format(17), gFormat.format(91.1));
     setTolerances(); // Plasmac specific
-    writeBlock(mFormat.format(52), pFormat.format(1)); //enable reverse run
-    writeBlock(mFormat.format(65), pFormat.format(2));
-    writeBlock(mFormat.format(65), pFormat.format(3));
-    writeBlock(mFormat.format(68), eFormat.format(3), qFormat.format(0));
+    writeBlock(mFormat.format(52), pFormat.format(1)); //enable reverse run, pause motion
+    writeBlock(mFormat.format(65), pFormat.format(2)); //THC Immediate
+    writeBlock(mFormat.format(65), pFormat.format(3)); //Torch Enable Immediate
+    writeBlock(mFormat.format(68), eFormat.format(3), qFormat.format(0)); //velocity control
 }
 
 function onComment(message) {
@@ -402,7 +402,7 @@ function onCycle() {
 var pendingRadiusCompensation = -1;
 
 function onRadiusCompensation() {
-    writeComment("Radius Change Event --> " + radiusCompensation);
+    // writeComment("Radius Change Event --> " + radiusCompensation);
     // radiusCompensation: 
     //  0 = Center/OFF 
     //  1 = Compensation_Left
