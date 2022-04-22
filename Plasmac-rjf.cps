@@ -158,9 +158,9 @@ function setTolerances() {
 
 function onPower(power) {
     if (power) {
-        if (!smallHoleSection) {
-            writeBlock(mFormat.format(3), $Format.format(0), sFormat.format(1));
-        }
+        //if (!smallHoleSection) {
+        writeBlock(mFormat.format(3), $Format.format(0), sFormat.format(1));
+        //}
     } else {
         writeBlock(mFormat.format(5));
     }
