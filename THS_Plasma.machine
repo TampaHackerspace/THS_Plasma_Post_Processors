@@ -5,7 +5,7 @@
 
   <model></model>
 
-  <description>THS Plasma</description>
+  <description>Tampa Hackerspace Plasma</description>
 
   <control></control>
 
@@ -50,7 +50,7 @@
   </simulation>
 
   <post>
-    <postProcessor>file://G:/My Drive/Projects/hsm-post-processors/Plasmac-rjf.cps</postProcessor>
+    <postProcessor>linked://G:/My Drive/Projects/hsm-post-processors/Plasmac-rjf.cps</postProcessor>
     <postProperties>
       <Parameters/>
     </postProperties>

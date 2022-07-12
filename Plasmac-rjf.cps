@@ -12,14 +12,14 @@
   FORKID {51C1E5C7-D09E-458F-AC35-4A2CE1E0AE32}
 */
 
-description = "PlasmaC";
+description = "Tampa Hackerspace PlasmaC";
 vendor = "LinuxCNC";
 vendorUrl = "http://www.linuxcnc.org";
 legal = "Copyright (C) 2015-2016 by Autodesk, Inc.";
 certificationLevel = 2;
 minimumRevision = 39000;
 
-longDescription = "Plasmac post processor"
+longDescription = "Plasmac post processor for Tampa Hackerspace Lightning CNC Plasma Table"
 extension = "ngc";
 setCodePage("ascii");
 
