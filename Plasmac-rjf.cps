@@ -36,34 +36,128 @@ allowedCircularPlanes = undefined;
 
 
 
-// user-defined properties
+// user-defined property definitions
 properties = {
-    writeMachine: true, // write machine
-    showSequenceNumbers: true, // show sequence numbers
-    sequenceNumberStart: 10, // first sequence number
-    sequenceNumberIncrement: 5, // increment for sequence numbers
-    separateWordsWithSpace: true, // specifies that the words should be separated with a white space
-    toolTrack: spatial(0.254, MM),
-    camTolerance: spatial(0.254, MM),
-    showNotes: true,
-    slowSpeedPercentage: 60,
-    MergeCircles: false,
-    useAutomaticMaterialSelection: false,
+    writeMachine: {
+        title: "Write machine settings",
+        description: "Output the machine settings in the header of the code.",
+        group: "General",
+        type: "boolean",
+        value: true,
+        scope: "post",
+    },
+    showNotes: {
+        title: "Show operation notes",
+        description: "Writes operation notes as comments in the outputted code.",
+        group: "General",
+        type: "boolean",
+        value: true,
+        scope: "post",
+    },
+    showSequenceNumbers: {
+        title: "Use sequence numbers",
+        description: "Use sequence numbers for each block of outputted code.",
+        group: "General",
+        type: "boolean",
+        value: true,
+        scope: "post",
+    },
+    sequenceNumberStart: {
+        title: "Start sequence number",
+        description: "The number at which to start the sequence numbers.",
+        group: "General",
+        type: "integer",
+        value: 10,
+        scope: "post",
+    },
+    sequenceNumberIncrement: {
+        title: "Sequence number increment",
+        description: "The amount by which the sequence number is incremented by in each block.",
+        group: "General",
+        type: "integer",
+        value: 5,
+        scope: "post",
+    },
+    separateWordsWithSpace: {
+        title: "Separate words with space",
+        description: "Adds spaces between words if 'yes' is selected.",
+        group: "General",
+        type: "boolean",
+        value: true,
+        scope: "post",
+    },
+    useAutomaticMaterialSelection: {
+        title: "Automatic Material",
+        description: "Tool Number will be used to select material settings",
+        group: "General",
+        type: "boolean",
+        value: false,
+        scope: "post",
+    },
+    toolTrack: {
+        title: "Blending tolerance",
+        description: "Blending tolerance that path blending allows (in mm)",
+        group: "Tolerances",
+        type: "number",
+        value: 0.254,
+        scope: "post",
+    },
+    camTolerance: {
+        title: "Naive cam tolerance",
+        description: "Linear tolerance for multiple nodes on the same tool path (in mm)",
+        group: "Tolerances",
+        type: "spatial",
+        value: spatial(0.310, MM),
+        scope: "post",
+    },
+    mergeCircles: {
+        title: "Merge Circles",
+        description: "Combine circles to a single operation when possible.",
+        group: "Circles",
+        type: "boolean",
+        value: false,
+        scope: "post",
+    },
+    slowSpeedPercentage: {
+        title: "Slow Speed Percentage",
+        description: "What percentage of normal speed to use for cutting small circles",
+        group: "Circles",
+        type: "integer",
+        range: [1, 99],
+        value: 60,
+        scope: "post",
+    },
+    smallHole: {
+        title: "Small Hole",
+        description: "Treat operation as a small hole.",
+        type: "boolean",
+        group: "preferences",
+        value: false,
+        scope: "operation",
+    }
 };
 
-// user-defined property definitions
-propertyDefinitions = {
-    writeMachine: { title: "Write machine", description: "Output the machine settings in the header of the code.", group: 0, type: "boolean" },
-    useAutomaticMaterialSelection: { title: "Automatic Material", description: "Tool Number will be used to select material settings", group: 1, type: "boolean" },
-    showSequenceNumbers: { title: "Use sequence numbers", description: "Use sequence numbers for each block of outputted code.", group: 1, type: "boolean" },
-    sequenceNumberStart: { title: "Start sequence number", description: "The number at which to start the sequence numbers.", group: 1, type: "integer" },
-    sequenceNumberIncrement: { title: "Sequence number increment", description: "The amount by which the sequence number is incremented by in each block.", group: 1, type: "integer" },
-    separateWordsWithSpace: { title: "Separate words with space", description: "Adds spaces between words if 'yes' is selected.", type: "boolean" },
-    toolTrack: { title: "Blending tolerance", description: "Blending tolerance that path blending allows (in mm)", group: 2, type: "number" },
-    camTolerance: { title: "Naive cam tolerance", description: "Linear tolerance for multiple nodes on the same tool path (in mm)", group: 2, type: "number" },
-    showNotes: { title: "Show notes", description: "Writes operation notes as comments in the outputted code.", group: 3, type: "boolean" },
-    slowSpeedPercentage: { title: "Slow Speed Percentage", description: "What percentage of normal speed to use for cutting small circles", type: "integer" }
-};
+
+groupDefinitions = {
+    General: {
+        title: "General",
+        description: "Common PlasmaC options",
+        order: 10,
+        collapsed: false
+    },
+    Tolerances: {
+        title: "Tolerances",
+        description: "Machine level tolerances",
+        order: 15,
+        collapsed: true
+    },
+    Circles: {
+        title: "Circles",
+        description: "Circle specifics settings",
+        order: 20,
+        collapsed: true
+    }
+}
 
 // wcs definiton
 wcsDefinitions = {
@@ -123,11 +217,11 @@ function writeBlock() {
     if (!text) {
         return;
     }
-    if (properties.showSequenceNumbers) {
+    if (getProperty("showSequenceNumbers")) {
         writeWords2("N" + sequenceNumber, arguments);
-        sequenceNumber += properties.sequenceNumberIncrement;
+        sequenceNumber += getProperty("sequenceNumberIncrement");
         if (sequenceNumber > 99999) {
-            sequenceNumber = properties.sequenceNumberStart
+            sequenceNumber = getProperty("sequenceNumberStart")
         }
     } else {
         writeWords(arguments);
@@ -148,10 +242,10 @@ function writeComment(text) {
 function setTolerances() {
     switch (unit) {
         case IN:
-            writeBlock(gFormat.format(64), pFormat.format((properties.toolTrack / 25.4)), qFormat.format((properties.camTolerance / 25.4)));
+            writeBlock(gFormat.format(64), pFormat.format((getProperty("toolTrack") / 25.4)), qFormat.format((getProperty("camTolerance") / 25.4)));
             break;
         case MM:
-            writeBlock(gFormat.format(64), pFormat.format(properties.toolTrack), qFormat.format(properties.camTolerance));
+            writeBlock(gFormat.format(64), pFormat.format(getProperty("toolTrack")), qFormat.format(getProperty("camTolerance")));
             break;
     }
 }
@@ -168,11 +262,11 @@ function onPower(power) {
 
 function onOpen() {
 
-    if (!properties.separateWordsWithSpace) {
+    if (!getProperty("separateWordsWithSpace")) {
         setWordSeparator("");
     }
 
-    sequenceNumber = properties.sequenceNumberStart;
+    sequenceNumber = getProperty("sequenceNumberStart");
 
     if (programName) {
         writeComment(programName);
@@ -186,7 +280,7 @@ function onOpen() {
     var model = machineConfiguration.getModel();
     var description = machineConfiguration.getDescription();
 
-    if (properties.writeMachine && (vendor || model || description)) {
+    if (getProperty("writeMachine") && (vendor || model || description)) {
         writeComment(localize("Machine"));
         if (vendor) {
             writeComment("  " + localize("vendor") + ": " + vendor);
@@ -263,7 +357,23 @@ function onSection() {
         }
     }
 
+    // if (getProperty("smallHole")) {
+    //     smallHoleSection = true;
+    //     writeComment("--------------------------------------------------------------------------------------------------");
+    //     writeComment("- This section is set up to cut small holes only.                                                -");
+    //     writeComment("- It will automatically slow the cut speed based on the setting in the parameters.               -");
+    //     writeComment("- It will also create an arc lead-in for each hole starting at the center of the hole.           -");
+    //     writeComment("- Any other type of operations in this section will not work correctly                           -");
+    //     writeComment("- This setup has occurred due to disabling lead in on the leads page                             -");
+    //     writeComment("- Be certain you have also set Pierce Clearance to 0 or you will not get the correct results     -");
+    //     writeComment("--------------------------------------------------------------------------------------------------");
 
+    // } else {
+    //     writeComment("---------------------");
+    //     writeComment("- Normal operation. -");
+    //     writeComment("---------------------");
+    //     smallHoleSection = false;
+    // }
     if (hasParameter("operation:doLeadIn") && getParameter("operation:doLeadIn") == 0) {
         smallHoleSection = true;
         if (!centerPunch) {
@@ -295,7 +405,7 @@ function onSection() {
         smallHoleSection = false;
     }
 
-    if (properties.showNotes && hasParameter("notes")) {
+    if (getProperty("showNotes") && hasParameter("notes")) {
         var notes = getParameter("notes");
         if (notes) {
             var lines = String(notes).split("\n");
@@ -361,7 +471,7 @@ function onSection() {
          * to a material number in plasmac material *
          * table.                                   *
          ********************************************/
-        if (properties.useAutomaticMaterialSelection) {
+        if (getProperty("useAutomaticMaterialSelection")) {
             writeBlock(mFormat.format(190), pFormat.format(tool.number));
             writeBlock(mFormat.format(66), pFormat.format(3), lFormat.format(3), qFormat.format(1));
         }
@@ -506,7 +616,7 @@ function onCircular(clockwise, cx, cy, cz, x, y, z, feed) {
             }
             return;
         }
-    } else if (nextCircle && properties.MergeCircles) {
+    } else if (nextCircle && getProperty("MergeCircles")) {
         circleBuffer = {
             center: new Vector(cx, cy, cz),
             start: getCurrentPosition(),
@@ -579,7 +689,7 @@ function writeCircle(circleData, feed) {
                     } else {
                         writeComment("SMALL HOLE WITH ARC LEAD-IN FROM CENTER POINT AND 4MM OVERCUT WITH TORCH OFF");
                         writeBlock(mFormat.format(3), $Format.format(0), sFormat.format(1)); //start the torch
-                        writeBlock(mFormat.format(67), eFormat.format(3), qFormat.format(properties.slowSpeedPercentage)); //slow the cutting speed
+                        writeBlock(mFormat.format(67), eFormat.format(3), qFormat.format(getProperty("slowSpeedPercentage"))); //slow the cutting speed
                         writeBlock(gMotionModal.format(circleData.clockwise ? 2 : 3), xOutput.format(circleData.end.x), yOutput.format(circleData.end.y), iOutput.format(arcI, 0), jOutput.format(arcJ, 0)); //create lead in arc
                         writeBlock(gMotionModal.format(circleData.clockwise ? 2 : 3), xOutput.format(circleData.end.x), yOutput.format(circleData.end.y), iOutput.format(circleData.center.x - circleData.start.x, 0), jOutput.format(circleData.center.y - circleData.start.y, 0)); //cut the circle
 
