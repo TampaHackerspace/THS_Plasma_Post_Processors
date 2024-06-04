@@ -2,14 +2,10 @@
   Copyright (C) 2015-2016 by Autodesk, Inc.
   All rights reserved.
 
-  PlasmaC post processor
-  Revision 0
-  09/01/2019
+  PlasmaC post processor for HSMWorks
+  Revision 1
+  06/04/2024
 
-  $Revision: 42319 7b9a1dc9f1343527d18a6a1d92801fb7a4787cad $
-  $Date: 2019-05-31 12:02:09 $
-  
-  FORKID {51C1E5C7-D09E-458F-AC35-4A2CE1E0AE32}
 */
 
 description = "Tampa Hackerspace PlasmaC";
@@ -19,7 +15,8 @@ legal = "Copyright (C) 2015-2016 by Autodesk, Inc.";
 certificationLevel = 2;
 minimumRevision = 39000;
 
-longDescription = "Plasmac post processor for Tampa Hackerspace Lightning CNC Plasma Table"
+longDescription = "Plasmac post processor for Tampa Hackerspace Lightning CNC \
+Plasma Table. Emulate a Plasma cutter using milling functions in HSMWorks"
 extension = "ngc";
 //setCodePage("ascii");
 
@@ -119,23 +116,6 @@ properties = {
         type: "boolean",
         value: false,
         scope: "post",
-    },
-    slowSpeedPercentage: {
-        title: "Slow Speed Percentage",
-        description: "What percentage of normal speed to use for cutting small circles",
-        group: "Circles",
-        type: "integer",
-        range: [10, 99],
-        value: 60,
-        scope: "post",
-    },
-    smallHole: {
-        title: "Small Hole",
-        description: "Treat operation as a small hole. \n\n Recommended holes smaller than 1.26\" should be set to small hole mode.",
-        type: "boolean",
-        group: "preferences",
-        value: false,
-        scope: "operation",
     }
 };
 
@@ -208,8 +188,6 @@ var WARNING_WORK_OFFSET = 0;
 // collected state
 var sequenceNumber;
 var currentWorkOffset;
-var smallHoleSection = false;
-var centerPunch = false;
 
 /**
   Writes the specified block.
@@ -255,15 +233,7 @@ function setTolerances() {
 function onPower(power) {
     if (power) {                                                                //Requested power ON
         writeBlock(mFormat.format(3), $Format.format(0), sFormat.format(1));    //start the torch
-        if (smallHoleSection) {
-            writeComment("Slowing velocity for small hole");
-            writeBlock(mFormat.format(67), eFormat.format(3), qFormat.format(getProperty("slowSpeedPercentage"))); //slow the cutting speed
-        }
     } else {                                                                    //Requested power OFF
-        if (smallHoleSection) {
-            writeComment("Return velocity to full speed");
-            writeBlock(mFormat.format(67), eFormat.format(3), qFormat.format(100)); //set speed back to 100%
-        }
         writeBlock(mFormat.format(5));                                          //stop the torch
     }
 }
@@ -443,7 +413,7 @@ function commentMovement(movement) {
 }
 
 function onMovement(movement) {
-    commentMovement(movement);
+    //commentMovement(movement);
     if (movement == MOVEMENT_PLUNGE) torchOn(true);
     if (movement == MOVEMENT_RAPID) torchOn(false);
 }
@@ -464,49 +434,6 @@ function onSection() {
         }
     }
 
-    if (getProperty("smallHole")) {
-        smallHoleSection = true;
-        writeComment("---------------------------------------------------------------------------------------");
-        writeComment("- This section is set up to cut small holes.                                          -");
-        writeComment("- It will automatically slow the cut velocity based on the setting in the parameters. -");
-        writeComment("---------------------------------------------------------------------------------------");
-
-    } else {
-        smallHoleSection = false;
-        writeComment("---------------------");
-        writeComment("- Normal operation. -");
-        writeComment("---------------------");
-    }
-    // if (hasParameter("operation:doLeadIn") && getParameter("operation:doLeadIn") == 0) {
-    //     smallHoleSection = true;
-    //     if (!centerPunch) {
-    //         writeComment("--------------------------------------------------------------------------------------------------");
-    //         writeComment("- This section is set up to cut small holes only.                                                -");
-    //         writeComment("- It will automatically slow the cut speed for the hole(s) based on the setting in the parameters. -");
-    //         writeComment("- It will also create an arc lead-in for each hole starting at the center of the hole.           -");
-    //         writeComment("- Any other type of operations in this section will not work correctly                           -");
-    //         writeComment("- This setup has occurred due to disabling lead in on the leads page                             -");
-    //         writeComment("- Be certain you have also set Pierce Clearance to 0 or you will not get the correct results     -");
-    //         writeComment("--------------------------------------------------------------------------------------------------");
-    //     } else {
-    //         writeComment("--------------------------------------------------------------------------------------------------");
-    //         writeComment("- This section is set up to center punch the selected holes.                                     -");
-    //         writeComment("- Any other type of operations in this section will not work correctly                           -");
-    //         writeComment("--------------------------------------------------------------------------------------------------");
-    //         writeBlock(feedOutput.format(999999));
-    //     }
-    // } else {
-    //     if (smallHoleSection) {
-    //         writeComment("--------------------------------------------------");
-    //         writeComment("- This section has reverted to normal operation. -");
-    //         writeComment("--------------------------------------------------");
-    //     } else {
-    //         writeComment("---------------------");
-    //         writeComment("- Normal operation. -");
-    //         writeComment("---------------------");
-    //     }
-    //     smallHoleSection = false;
-    // }
 
     if (getProperty("showNotes") && hasParameter("notes")) {
         var notes = getParameter("notes");
@@ -644,38 +571,25 @@ function onRadiusCompensation() {
     } else {
         pendingRadiusCompensation = radiusCompensation;
     }
-
-    // if (pendingRadiusCompensation >= 0) {
-    //     pendingRadiusCompensation = -1;
-    // switch (radiusCompensation) {
-    //     case RADIUS_COMPENSATION_LEFT:
-    //         writeBlock(gFormat.format(41.1), "D#<_hal[plasmac_run.kerf-width-f]>");
-    //         break;
-    //     case RADIUS_COMPENSATION_RIGHT:
-    //         writeBlock(gFormat.format(42.1), "D#<_hal[plasmac_run.kerf-width-f]>");
-    //         break;
-    //     default:
-    //         writeBlock(gFormat.format(40));
-    // }
-    // }
-    // pendingRadiusCompensation = radiusCompensation;
 }
 
 function onParameter(name, value) {
-    if (name == "action") {
-        var sText1 = String(value).toUpperCase();
-        var sText2 = new Array();
-        sText2 = sText1.split(":")
-        if (sText2[0] == "CENTERPUNCH") {
-            if (sText2[1] == "ON") {
-                centerPunch = true;
-            } else {
-                centerPunch = false;
-                writeBlock("F#<_hal[plasmac.cut-feed-rate]>");
+    switch (name) {
+        case "action":
+            //writeComment ("ACTION Param Value = " + value);
+            let valueArray = value.split(",");
+            if (valueArray[0] === "SPEED"){
+               writeComment("Setting movement velocity to " + valueArray[1] + " percent");
+               writeBlock(mFormat.format(67), eFormat.format(3), qFormat.format(parseInt(valueArray[1])));
             }
-        }
+            return;
+        default:
+            //writeComment ("UNKNOWN Parameter = " + name + " -- Value = " + value);
+            return;
     }
 }
+
+
 function onRapid(_x, _y, _z) {
     var x = xOutput.format(_x);
     var y = yOutput.format(_y);
@@ -769,10 +683,6 @@ function onCircular(clockwise, cx, cy, cz, x, y, z, feed) {
 }
 
 
-
-
-
-
 //function onCircular(clockwise, cx, cy, cz, x, y, z, feed) {
 function writeCircle(circleData, feed) {
     circleIsBuffered = false;
@@ -788,69 +698,7 @@ function writeCircle(circleData, feed) {
     if (circleBuffer.sweep >= (Math.PI * 2 - toRad(0.01))) {
         switch (getCircularPlane()) {
             case PLANE_XY:
-                //RJF - dont use advanced small hole cutting routine
-                //RJF - we are only using reduced velocity for small holes. 
-
-                // if (smallHoleSection) {
-                // var radiusOfCircle = circleData.radius;
-                // var toolRadius = (getParameter("operation:tool_kerfWidth")) / 2;
-                // //var endXArc = circleData.center.cx + (((circleData.end.x-circleData.center.cx)*(radiusOfCircle-toolRadius))/radiusOfCircle);
-                // //var endYArc = circleData.center.cy + (((circleData.end.y-circleData.center.cy)*(radiusOfCircle-toolRadius))/radiusOfCircle);
-                // var arcCenterX = ((circleData.end.x - circleData.center.x) / 2) + circleData.center.x;
-                // var arcCenterY = ((circleData.end.y - circleData.center.y) / 2) + circleData.center.y;
-                // var arcI = arcCenterX - circleData.center.x;
-                // var arcJ = arcCenterY - circleData.center.y;
-                // writeBlock(gMotionModal.format(0), xOutput.format(circleData.center.x), yOutput.format(circleData.center.y)); //move to start of entry arc - center of the hole
-                // if (centerPunch) {
-                //     writeComment("CENTER PUNCH THE HOLE ONLY");
-                //     //writeBlock(feedOutput.format(99999));
-                //     writeBlock(mFormat.format(3), $Format.format(2), sFormat.format(1)); //start the torch
-                //     writeBlock(gFormat.format(91));
-                //     writeBlock(gFormat.format(1), xOutput.format(0.00001));
-                //     writeBlock(gFormat.format(90));
-                //     //writeBlock("F#<_hal[plasmac.cut-feed-rate]>");
-                //     //writeBlock(gFormat.format(0));
-                // } else {
-                //     writeComment("SMALL HOLE WITH ARC LEAD-IN FROM CENTER POINT AND 4MM OVERCUT WITH TORCH OFF");
-                //     writeBlock(mFormat.format(3), $Format.format(0), sFormat.format(1)); //start the torch
-                //     writeBlock(mFormat.format(67), eFormat.format(3), qFormat.format(getProperty("slowSpeedPercentage"))); //slow the cutting speed
-                //     writeBlock(gMotionModal.format(circleData.clockwise ? 2 : 3), xOutput.format(circleData.end.x), yOutput.format(circleData.end.y), iOutput.format(arcI, 0), jOutput.format(arcJ, 0)); //create lead in arc
-                //     writeBlock(gMotionModal.format(circleData.clockwise ? 2 : 3), xOutput.format(circleData.end.x), yOutput.format(circleData.end.y), iOutput.format(circleData.center.x - circleData.start.x, 0), jOutput.format(circleData.center.y - circleData.start.y, 0)); //cut the circle
-
-                //     // Turn off the torch and extend the cut 4mm
-                //     switch (unit) {
-                //         case IN:
-                //             cosA = Math.cos(0.157 / radiusOfCircle);
-                //             sinA = Math.sin(0.157 / radiusOfCircle);
-                //             break;
-                //         case MM:
-                //             cosA = Math.cos(4 / radiusOfCircle);
-                //             sinA = Math.sin(4 / radiusOfCircle);
-                //             break;
-                //     }
-                //     cosB = ((circleData.end.x - circleData.center.x) / radiusOfCircle);
-                //     sinB = ((circleData.end.y - circleData.center.y) / radiusOfCircle);
-                //     writeBlock(mFormat.format(62), pFormat.format(3)); //turn off torch with next motion
-                //     if (circleData.clockwise) {
-                //         newEndX = circleData.center.x + radiusOfCircle * ((cosB * cosA) + (sinB * sinA));
-                //         newEndY = circleData.center.y + radiusOfCircle * ((sinB * cosA) - (cosB * sinA));
-                //     } else {
-                //         newEndX = circleData.center.x + radiusOfCircle * ((cosB * cosA) - (sinB * sinA));
-                //         newEndY = circleData.center.y + radiusOfCircle * ((sinB * cosA) + (cosB * sinA));
-                //     }
-                //     writeBlock(gMotionModal.format(circleData.clockwise ? 2 : 3), xOutput.format(newEndX), yOutput.format(newEndY), iOutput.format(circleData.center.x - circleData.start.x, 0), jOutput.format(circleData.center.y - circleData.start.y, 0));
-                //     writeBlock(mFormat.format(63), pFormat.format(3));// allow torch to be turned on again (syncronized with motion)
-                //     // End of cut extension code
-                //     slowedCutting = false;
-                //     writeBlock(mFormat.format(67), eFormat.format(3), qFormat.format(100)); //set speed back to 100%
-                // }
-                // } else {
-                //     writeBlock(gMotionModal.format(circleData.clockwise ? 2 : 3), xOutput.format(circleData.end.x), yOutput.format(circleData.end.y), iOutput.format(circleData.center.x - circleData.start.x, 0), jOutput.format(circleData.center.y - circleData.start.y, 0));
-                // }
-
-
                 writeBlock(gMotionModal.format(circleData.clockwise ? 2 : 3), xOutput.format(circleData.end.x), yOutput.format(circleData.end.y), iOutput.format(circleData.center.x - circleData.start.x, 0), jOutput.format(circleData.center.y - circleData.start.y, 0));
-
                 break;
             default:
                 linearize(tolerance);
@@ -871,16 +719,9 @@ function writeCircle(circleData, feed) {
 
 }
 
-var mapCommand = {
-    COMMAND_STOP: 0,
-    COMMAND_OPTIONAL_STOP: 1,
-    COMMAND_END: 2,
-    COMMAND_SPINDLE_CLOCKWISE: 3,
-    COMMAND_SPINDLE_COUNTERCLOCKWISE: 4,
-    COMMAND_STOP_SPINDLE: 5
-};
 
 function onCommand(command) {
+	writeComment("Command - " + command );
     switch (command) {
         case COMMAND_STOP:
             writeBlock(mFormat.format(0));
@@ -889,20 +730,10 @@ function onCommand(command) {
         case COMMAND_START_SPINDLE:
             onCommand(COMMAND_SPINDLE_CLOCKWISE)
             return;
-        case COMMAND_POWER_ON:
-            return;
-        case COMMAND_POWER_OFF:
-            return;
         case COMMAND_BREAK_CONTROL:
             return;
-    }
-
-    var stringId = getCommandStringId(command);
-    var mcode = mapCommand[stringId];
-    if (mcode != undefined) {
-        writeBlock(mFormat.format(mcode));
-    } else {
-        onUnsupportedCommand(command);
+        default:
+            return;
     }
 }
 
