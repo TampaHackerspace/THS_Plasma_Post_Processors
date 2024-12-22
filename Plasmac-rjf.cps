@@ -281,6 +281,8 @@ function onOpen() {
         writeComment(programComment);
     }
 
+    writeComment("THS Fusion360 Post");
+
     // dump machine configuration
     var vendor = machineConfiguration.getVendor();
     var model = machineConfiguration.getModel();
