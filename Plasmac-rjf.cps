@@ -3,13 +3,12 @@
   All rights reserved.
 
   PlasmaC post processor
-  Revision 0
-  09/01/2019
+  Revision 1.0
+  02/17/2025
 
-  $Revision: 42319 7b9a1dc9f1343527d18a6a1d92801fb7a4787cad $
-  $Date: 2019-05-31 12:02:09 $
+  $Revision: 42320 7b9a1dc9f1343527d18a6a1d92801fb7a4787cad $
+  $Date: 2025-02-17 09:02:09 $
   
-  FORKID {51C1E5C7-D09E-458F-AC35-4A2CE1E0AE32}
 */
 
 description = "Tampa Hackerspace PlasmaC";
@@ -209,6 +208,15 @@ var currentWorkOffset;
 var smallHoleSection = false;
 var centerPunch = false;
 
+// User-defined function to check the unit and abort if it is set to MM
+function checkUnits() {
+    if (unit == MM) {
+        alert("THS Plasma Inch ONLY","Unit is set to millimeters (MM). Post processing aborted. Set Program Unit variable to Inches (IN) and try again.");
+        throw "Post processing aborted due to incorrect unit setting.";
+    }
+}
+
+
 /**
   Writes the specified block.
 */
@@ -267,6 +275,8 @@ function onPower(power) {
 }
 
 function onOpen() {
+
+    checkUnits();
 
     if (!getProperty("separateWordsWithSpace")) {
         setWordSeparator("");
